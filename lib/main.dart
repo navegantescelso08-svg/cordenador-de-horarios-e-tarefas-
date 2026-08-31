@@ -1,125 +1,284 @@
 import 'package:flutter/material.dart';
- 
+import 'models/task_model.dart';
+
 void main() {
   runApp(const MyApp());
 }
- 
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
- 
-  // This widget is the root of your application.
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Coordenador de Tarefas',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
+        useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      darkTheme: ThemeData.dark(useMaterial3: true),
+      themeMode: ThemeMode.system,
+      home: const TaskListScreen(),
     );
   }
 }
- 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
- 
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
- 
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
- 
-  final String title;
- 
+
+class TaskListScreen extends StatefulWidget {
+  const TaskListScreen({super.key});
+
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<TaskListScreen> createState() => _TaskListScreenState();
 }
- 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
- 
-  void _incrementCounter() {
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
-    });
+
+class _TaskListScreenState extends State<TaskListScreen> {
+  final List<Task> _tasks = [
+    Task(
+      id: 1,
+      userId: 1,
+      title: 'Estudar Framework Laravel 11',
+      description: 'Revisar rotas, controllers e migrations para o projeto.',
+      scheduledAt: '2026-09-01 14:00',
+      priority: 'alta',
+      status: 'pendente',
+    ),
+    Task(
+      id: 2,
+      userId: 1,
+      title: 'Configurar ambiente Flutter',
+      description: 'Testar componentes de UI e modelos de dados.',
+      scheduledAt: '2026-09-01 16:00',
+      priority: 'media',
+      status: 'em_andamento',
+    ),
+  ];
+
+  String _searchQuery = '';
+  String _selectedStatusFilter = 'todos';
+
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'alta':
+        return Colors.red;
+      case 'media':
+        return Colors.orange;
+      default:
+        return Colors.green;
+    }
   }
- 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'concluida':
+        return Colors.green;
+      case 'em_andamento':
+        return Colors.blue;
+      default:
+        return Colors.amber.shade800;
+    }
+  }
+
+  List<Task> get _filteredTasks {
+    return _tasks.where((task) {
+      final matchesSearch = task.title.toLowerCase().contains(_searchQuery.toLowerCase());
+      final matchesStatus = _selectedStatusFilter == 'todos' || task.status == _selectedStatusFilter;
+      return matchesSearch && matchesStatus;
+    }).toList();
+  }
+
+  void _openAddTaskModal() {
+    final titleController = TextEditingController();
+    final descriptionController = TextEditingController();
+    String priority = 'media';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          top: 16,
+          left: 16,
+          right: 16,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
+        ),
         child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+            const Text(
+              'Nova Tarefa',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: titleController,
+              decoration: const InputDecoration(
+                labelText: 'Título',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: descriptionController,
+              decoration: const InputDecoration(
+                labelText: 'Descrição',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: priority,
+              decoration: const InputDecoration(
+                labelText: 'Prioridade',
+                border: OutlineInputBorder(),
+              ),
+              items: const [
+                DropdownMenuItem(value: 'baixa', child: Text('Baixa')),
+                DropdownMenuItem(value: 'media', child: Text('Média')),
+                DropdownMenuItem(value: 'alta', child: Text('Alta')),
+              ],
+              onChanged: (val) => priority = val ?? 'media',
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                if (titleController.text.trim().isEmpty) return;
+                setState(() {
+                  _tasks.add(
+                    Task(
+                      id: DateTime.now().millisecondsSinceEpoch,
+                      userId: 1,
+                      title: titleController.text,
+                      description: descriptionController.text,
+                      scheduledAt: '2026-09-01 18:00',
+                      priority: priority,
+                      status: 'pendente',
+                    ),
+                  );
+                });
+                Navigator.of(ctx).pop();
+              },
+              child: const Text('Salvar Tarefa'),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Coordenador de Tarefas'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: const InputDecoration(
+                      hintText: 'Pesquisar tarefa...',
+                      prefixIcon: Icon(Icons.search),
+                      border: OutlineInputBorder(),
+                      contentPadding: EdgeInsets.symmetric(vertical: 8),
+                    ),
+                    onChanged: (value) => setState(() => _searchQuery = value),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                DropdownButton<String>(
+                  value: _selectedStatusFilter,
+                  items: const [
+                    DropdownMenuItem(value: 'todos', child: Text('Todos')),
+                    DropdownMenuItem(value: 'pendente', child: Text('Pendente')),
+                    DropdownMenuItem(value: 'em_andamento', child: Text('Em Andamento')),
+                    DropdownMenuItem(value: 'concluida', child: Text('Concluída')),
+                  ],
+                  onChanged: (val) => setState(() => _selectedStatusFilter = val!),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _filteredTasks.isEmpty
+                ? const Center(child: Text('Nenhuma tarefa encontrada.'))
+                : ListView.builder(
+                    itemCount: _filteredTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = _filteredTasks[index];
+                      final isDone = task.status == 'concluida';
+
+                      return Dismissible(
+                        key: Key(task.id.toString()),
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.only(right: 20),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        direction: DismissDirection.endToStart,
+                        onDismissed: (_) {
+                          setState(() => _tasks.removeWhere((t) => t.id == task.id));
+                        },
+                        child: Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: ListTile(
+                            leading: Checkbox(
+                              value: isDone,
+                              onChanged: (bool? checked) {
+                                setState(() {
+                                  final targetIndex = _tasks.indexWhere((t) => t.id == task.id);
+                                  if (targetIndex != -1) {
+                                    _tasks[targetIndex] = Task(
+                                      id: task.id,
+                                      userId: task.userId,
+                                      title: task.title,
+                                      description: task.description,
+                                      scheduledAt: task.scheduledAt,
+                                      priority: task.priority,
+                                      status: checked == true ? 'concluida' : 'pendente',
+                                    );
+                                  }
+                                });
+                              },
+                            ),
+                            title: Text(
+                              task.title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                decoration: isDone ? TextDecoration.lineThrough : null,
+                              ),
+                            ),
+                            subtitle: Text('${task.description ?? ''}\nHorário: ${task.scheduledAt}'),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Chip(
+                                  labelStyle: const TextStyle(fontSize: 10, color: Colors.white),
+                                  backgroundColor: _getStatusColor(task.status),
+                                  label: Text(task.status),
+                                  padding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _openAddTaskModal,
         child: const Icon(Icons.add),
       ),
     );
   }
 }
- 
- 
- 
